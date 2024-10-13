@@ -48,7 +48,7 @@ def check_user_video_credits(jwt_token):
     """
     Fetches the user's video credits from the external user service.
     """
-    print(f"Inside the check_user_video_credits: {jwt_token}")
+    print(f"Inside the check_user_video_credits")
     url = f"{settings.USERS_SERVICE_URL}/users/internal_video_credits/"
     headers = {
         "Authorization": f"Bearer {jwt_token}",
@@ -79,7 +79,7 @@ def decrement_user_video_credits(video_credit, jwt_token):
     """
     Sends a PATCH request to decrement the user's video credits.
     """
-    print(f"Inside the decrement_user_video_credits: {jwt_token}")
+    print(f"Inside the decrement_user_video_credits")
     url = f"{settings.USERS_SERVICE_URL}/users/internal_video_credits/"
     headers = {
         "Authorization": f"Bearer {jwt_token}",
@@ -110,5 +110,4 @@ def decrement_user_video_credits(video_credit, jwt_token):
         raise APIException(
             f"An error occurred while updating video credits: {str(err)}")
 
-    print(response.content)
     return response.json()
