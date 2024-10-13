@@ -20,7 +20,7 @@ if STAGE:
     ALLOWED_HOSTS = [
         'stage.api.jobescape.me', 
         'stage.api.jobescape.us', 
-        'academy-stage-397596874269.us-east1.run.app'
+        'ai-stage-397596874269.us-east1.run.app'
     ]
 if DEBUG:
     ALLOWED_HOSTS.extend([
