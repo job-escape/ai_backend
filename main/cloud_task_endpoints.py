@@ -147,6 +147,7 @@ def generate_video_task_view(request):
         user_msg_id = request.data.get('user_msg_id')
         msg_obj_id = request.data.get('msg_obj_id')
         avatar_id = request.data.get('avatar_id')
+        print(user_msg_id, msg_obj_id, avatar_id)
         
         if not user_msg_id or not msg_obj_id or not avatar_id:
             return Response({"error": "Missing required parameters"}, status=status.HTTP_400_BAD_REQUEST)
