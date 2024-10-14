@@ -142,7 +142,7 @@ def generate_video_task_view(request):
     """
     exc_msg = "Generate video task: Aborting because "
     error = False
-    
+    # user_message
     try:
         user_msg_id = request.data.get('user_msg_id')
         msg_obj_id = request.data.get('msg_obj_id')
@@ -219,6 +219,7 @@ def generate_video_task_view(request):
             "synergizerStrength": SYNERGIZER_STRENGTH,
             "webhookUrl": WEBHOOK_URL
         }
+        print(payload)
         headers = {"x-api-key": settings.SYNCLAB_KEY, "Content-Type": "application/json"}
         response = requests.post(video_url, json=payload, headers=headers, timeout=settings.REQUESTS_TIMEOUT)
 
