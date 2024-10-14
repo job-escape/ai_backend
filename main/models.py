@@ -1,19 +1,7 @@
 from django.db import models
 from django.utils.translation.trans_null import gettext_lazy as _
 from rest_framework.fields import MinValueValidator
-
-# class AgentTypes(models.TextChoices):
-#     ARTICLE = 'article', _('Article')
-#     EMAIL = 'email', _('Email')
-#     SM_POST = 'sm_post', _('Social Media Post')
-#     SCRIPT = 'script', _('Script for AI Actor')
-#     FREELANCE = 'freelance', _('Freelancing adviser')
-
-
-class AgentTypes(models.TextChoices):
-    TEXT = 'text', _('Text')
-    VIDEO = 'video', _('Video')
-    IMAGE = 'image', _('Image')
+from .choices import AgentTypes
 
 
 class VideoAvatar(models.Model):
