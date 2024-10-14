@@ -14,7 +14,7 @@ def create_update_user_onboarding_task(fields, token):
 
     task = {
         "http_request": {
-            "http_method": tasks_v2.HttpMethod.POST,
+            "http_method": tasks_v2.HttpMethod.PATCH,
             "url": f"{settings.USERS_SERVICE_URL}/users/onboarding_update/",
             "headers": {
                 "Content-Type": "application/json",

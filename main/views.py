@@ -189,7 +189,7 @@ class AiViewSet(viewsets.GenericViewSet):
         try:
             create_update_user_onboarding_task({
                 "first_video": True
-            }, str(request.auth))  # Use the token from the request.auth
+            }, str(request.auth))
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         return Response(TaskMessageCreateSerializer(ai_message).data, status.HTTP_201_CREATED)
