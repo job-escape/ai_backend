@@ -199,8 +199,29 @@ SIMPLE_JWT = {
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
-STATIC_URL = 'static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'static/')
 
 
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 10000
+
+STATIC_URL = 'static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'static/')
+AWS_ACCESS_KEY_ID = env("AWS_ACCESS_KEY_ID")
+AWS_SECRET_ACCESS_KEY = env('AWS_SECRET_ACCESS_KEY')
+AWS_STORAGE_BUCKET_NAME = env('AWS_STORAGE_BUCKET_NAME')
+AWS_CLOUDFRONT_DOMAIN = env('AWS_CLOUDFRONT_DOMAIN')
+AWS_S3_CUSTOM_DOMAIN = env('AWS_S3_CUSTOM_DOMAIN')
+AWS_S3_OBJECT_PARAMETERS = {
+    'CacheControl': 'max-age=86400',
+}
+if AWS_ACCESS_KEY_ID:
+    SECURE_CROSS_ORIGIN_OPENER_POLICY = 'same-origin-allow-popups'
+    MEDIAFILES_LOCATION = 'media'
+    MEDIA_ROOT = '/%s/' % MEDIAFILES_LOCATION
+    MEDIA_URL = '//%s/%s/' % (AWS_CLOUDFRONT_DOMAIN, MEDIAFILES_LOCATION)
+    DEFAULT_FILE_STORAGE = 'custom.custom_storage.MediaStorage'
+
+    STATICFILES_LOCATION = 'static'
+    STATIC_ROOT = '/%s/' % STATICFILES_LOCATION
+    # STATIC_URL = '//%s/%s/' % (AWS_CLOUDFRONT_DOMAIN, STATICFILES_LOCATION)
+    STATIC_URL = 'https://%s/%s/' % (AWS_CLOUDFRONT_DOMAIN, STATICFILES_LOCATION)
+    STATICFILES_STORAGE = 'custom.custom_storage.StaticStorage'
