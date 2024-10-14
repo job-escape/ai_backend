@@ -1,7 +1,4 @@
-import google.auth
 from google.cloud import tasks_v2
-from google.protobuf import timestamp_pb2
-from datetime import datetime, timedelta
 import json
 from django.conf import settings
 

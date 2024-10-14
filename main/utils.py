@@ -8,12 +8,8 @@ from requests.exceptions import (
 )
 from typing import List, Literal
 from django.conf import settings
-from openai import (
-    OpenAI,
-)
-from openai.types.chat import (
-    ChatCompletionMessageParam,
-)
+from openai import OpenAI
+from openai.types.chat import ChatCompletionMessageParam
 from rest_framework.exceptions import APIException
 
 client = OpenAI(api_key=settings.GPT_API_KEY,
@@ -48,7 +44,6 @@ def check_user_video_credits(jwt_token):
     """
     Fetches the user's video credits from the external user service.
     """
-    print(f"Inside the check_user_video_credits")
     url = f"{settings.USERS_SERVICE_URL}/users/internal_video_credits/"
     headers = {
         "Authorization": f"Bearer {jwt_token}",
@@ -79,7 +74,6 @@ def decrement_user_video_credits(video_credit, jwt_token):
     """
     Sends a PATCH request to decrement the user's video credits.
     """
-    print(f"Inside the decrement_user_video_credits")
     url = f"{settings.USERS_SERVICE_URL}/users/internal_video_credits/"
     headers = {
         "Authorization": f"Bearer {jwt_token}",

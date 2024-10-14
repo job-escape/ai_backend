@@ -1,25 +1,21 @@
 import logging
 import requests
-import json
 from tempfile import TemporaryFile
 from urllib.request import urlopen
 from django.conf import settings
 from django.core.files import File
-from django.utils import timezone
 from main.models import (
     VideoAvatar,
     VideoAvatarTemplate,
 )
-from jlab.models import (
+from chat.models import (
     MessageObject,
     MessageObjectStatuses,
     MessageObjectTypes,
-    TaskMessage,
+    Message,
 )
-# from account.models import UserOnboarding
 from main.utils import generate_image
 from main.api import StreamAgentAPI
-# from ai.celery import app
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from rest_framework import status
@@ -33,21 +29,6 @@ else:
     WEBHOOK_URL = "https://api.jobescape.me/ai_v2/synclab/"
 
 
-
-# def dummy_generate_video_task(msg_obj_id: int) -> bool:
-#     try:
-#         ai_msg_obj = MessageObject.objects.get(id=msg_obj_id)
-#     except:  # pylint: disable=W0702
-#         return False
-#     with TemporaryFile("w+b") as tmp_file:
-#         with urlopen(DUMMY_VIDEO_URL) as response:
-#             tmp_file.write(response.read())
-#         filename = f"stage_video_{ai_msg_obj.pk}.mp4" if settings.DEBUG else f"video_{ai_msg_obj.pk}.mp4"
-#         ai_msg_obj.file.save(filename, File(tmp_file), save=False)
-#     ai_msg_obj.status = MessageObjectStatuses.VIDEO_READY
-#     ai_msg_obj.save()
-#     return True
-
 @api_view(['POST'])
 def dummy_generate_video_task_view(request):
     """
@@ -60,19 +41,16 @@ def dummy_generate_video_task_view(request):
     }
     """
     try:
-        # Parse the request body
         msg_obj_id = request.data.get('msg_obj_id')
         
         if not msg_obj_id:
             return Response({"error": "Invalid or missing msg_obj_id"}, status=status.HTTP_400_BAD_REQUEST)
         
-        # Try to fetch the MessageObject by its ID
         try:
             ai_msg_obj = MessageObject.objects.get(id=msg_obj_id)
         except MessageObject.DoesNotExist:
             return Response({"error": "MessageObject does not exist"}, status=status.HTTP_404_NOT_FOUND)
 
-        # Generate the dummy video and save it to the MessageObject
         with TemporaryFile("w+b") as tmp_file:
             with urlopen(DUMMY_VIDEO_URL) as response:
                 tmp_file.write(response.read())
@@ -142,7 +120,6 @@ def generate_video_task_view(request):
     """
     exc_msg = "Generate video task: Aborting because "
     error = False
-    # user_message
     try:
         user_msg_id = request.data.get('user_msg_id')
         msg_obj_id = request.data.get('msg_obj_id')
@@ -153,7 +130,7 @@ def generate_video_task_view(request):
 
         try:
             ai_msg_obj = MessageObject.objects.get(id=msg_obj_id)
-            user_message = TaskMessage.objects.get(id=user_msg_id)
+            user_message = Message.objects.get(id=user_msg_id)
             avatar = VideoAvatar.objects.get(id=avatar_id)
             avatar_template = VideoAvatarTemplate.objects.filter(avatar=avatar).first()
             
@@ -168,7 +145,7 @@ def generate_video_task_view(request):
         except MessageObject.DoesNotExist:
             logging.warning(f"{exc_msg} related MessageObject does not exist! id={msg_obj_id}")
             error = True
-        except TaskMessage.DoesNotExist:
+        except Message.DoesNotExist:
             logging.warning(f"{exc_msg} user's Message does not exist! id={user_msg_id}")
             error = True
         except VideoAvatar.DoesNotExist:
@@ -219,7 +196,6 @@ def generate_video_task_view(request):
             "synergizerStrength": SYNERGIZER_STRENGTH,
             "webhookUrl": WEBHOOK_URL
         }
-        print(payload)
         headers = {"x-api-key": settings.SYNCLAB_KEY, "Content-Type": "application/json"}
         response = requests.post(video_url, json=payload, headers=headers, timeout=settings.REQUESTS_TIMEOUT)
 
@@ -256,24 +232,19 @@ def generate_image_task_view(request):
     error = True
 
     try:
-        # Extract data from the request
         user_msg_id = request.data.get('user_msg_id')
         msg_obj_id = request.data.get('msg_obj_id')
         
-        # Validate that required fields are present
         if not user_msg_id or not msg_obj_id:
             return Response({"error": "Missing required parameters"}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Fetch instances
         try:
             ai_msg_obj = MessageObject.objects.select_related("message__agent").get(id=msg_obj_id)
             ai_message = ai_msg_obj.message
-            user_message = TaskMessage.objects.prefetch_related("objs").get(id=user_msg_id)
+            user_message = Message.objects.prefetch_related("objs").get(id=user_msg_id)
 
-            # Fetch text content from user's TaskMessage
             prompt = StreamAgentAPI(ai_message).get_message_text_content(user_message)
 
-            # Check if there's already an image associated with this message
             if ai_msg_obj.file:
                 logging.warning("%s related MessageObject already has a file! id=%d", exc_msg, user_msg_id)
             else:
@@ -282,7 +253,7 @@ def generate_image_task_view(request):
         except MessageObject.DoesNotExist:
             logging.warning(f"{exc_msg} related MessageObject does not exist! id={msg_obj_id}")
             error = True
-        except TaskMessage.DoesNotExist:
+        except Message.DoesNotExist:
             logging.warning(f"{exc_msg} user's Message does not exist! id={user_msg_id}")
             error = True
 

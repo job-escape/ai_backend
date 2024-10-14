@@ -12,10 +12,10 @@ from main.models import (
     Agent,
     AgentTypes
 )
-from jlab.models import (
+from chat.models import (
     MessageObject,
     MessageObjectTypes,
-    TaskMessage,
+    Message,
 )
 
 
@@ -31,9 +31,9 @@ class StreamAgentAPI(BaseGenerationAPI):
         new TaskMessage with a MessageObject, corresponding to the answer of the Agent.
     """
     agent: Agent
-    agent_message: TaskMessage
+    agent_message: Message
 
-    def __init__(self, message: TaskMessage) -> None:
+    def __init__(self, message: Message) -> None:
         self.agent = message.agent  # type: ignore
         self.agent_message = message
 
@@ -45,14 +45,15 @@ class StreamAgentAPI(BaseGenerationAPI):
     def get_user_prompt(self, *args, **kwargs):
         return self.agent.user_template
 
-    def get_message_text_content(self, task_message: TaskMessage) -> str:
+    def get_message_text_content(self, task_message: Message) -> str:
         if task_message.is_answer:
             if obj := task_message.objs.first():  # type: ignore
                 return obj.content
             return ""
 
         params = defaultdict(lambda: self.NOT_DEFINED)
-        project = task_message.task.project
+        # project = task_message.task.project
+        chat = task_message.chat
 
         if isinstance(task_message.parameters, dict):
             params.update(task_message.parameters)
@@ -69,16 +70,15 @@ class StreamAgentAPI(BaseGenerationAPI):
 
         if task_message.agent.type == AgentTypes.TEXT:
             params.update(
-                full_name=project.user.full_name,
-                email=project.user.email
+                email=chat.user_email
             )
 
         return self.get_user_prompt().format_map(params)
 
-    def get_message_full_content(self, task_message: TaskMessage) -> List[Any]:
+    def get_message_full_content(self, task_message: Message) -> List[Any]:
         content = []
         params = defaultdict(lambda: self.NOT_DEFINED)
-        project = task_message.task.project
+        chat = task_message.chat
 
         if isinstance(task_message.parameters, dict):
             params.update(task_message.parameters)
@@ -100,8 +100,7 @@ class StreamAgentAPI(BaseGenerationAPI):
 
         if task_message.agent.type == AgentTypes.TEXT:
             params.update(
-                full_name=project.user.full_name,
-                email=project.user.email
+                email=chat.user_email
             )
 
         text = self.get_user_prompt().format_map(params)
@@ -135,7 +134,7 @@ class StreamAgentAPI(BaseGenerationAPI):
                 self.append_message(content, role)
 
     # @override ( Requires Python version 3.12 )
-    def get_text_stream(self, task_messages: Iterable[TaskMessage], last_msg_id: Any):  # pylint: disable=W0221
+    def get_text_stream(self, task_messages: Iterable[Message], last_msg_id: Any):  # pylint: disable=W0221
         try:
             return self._get_text_stream(task_messages=task_messages, last_msg_id=last_msg_id)
         except Exception as e:

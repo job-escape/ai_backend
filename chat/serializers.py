@@ -1,57 +1,36 @@
 from django.db import transaction
 from rest_framework import serializers
 
-from main.models import Agent, AgentTypes
-from jlab.models import (EditorObject, MessageObject, Project, ProjectTask,
-                         TaskMessage)
+from main.models import Agent
+from chat.models import (EditorObject, MessageObject, Chat, Message)
 
-
-class ProjectTaskIdSerializer(serializers.ModelSerializer):
-    task_id = serializers.IntegerField(source='id')
-
-    class Meta:
-        model = ProjectTask
-        fields = ['task_id']
-
-
-class ProjectTaskCreateSerializer(serializers.ModelSerializer):
-    title = serializers.CharField(default="Untitled", required=False)
-
-    class Meta:
-        model = ProjectTask
-        exclude = ['project']
-        extra_kwargs = {
-            'id': {'read_only': True}
-        }
-
-
-class EditorObjectForTaskSerializer(serializers.ModelSerializer):
+class EditorObjectForChatSerializer(serializers.ModelSerializer):
     delete = serializers.BooleanField(required=False, default=False, write_only=True)  # type: ignore
     file = serializers.URLField()
 
     class Meta:
         model = EditorObject
-        exclude = ['task']
+        exclude = ['chat']
         extra_kwargs = {
             'id': {'read_only': False},
         }
 
 
-class ProjectTaskDetailSerializer(serializers.ModelSerializer):
-    objs = EditorObjectForTaskSerializer(many=True, read_only=True)
+class ChatDetailSerializer(serializers.ModelSerializer):
+    objs = EditorObjectForChatSerializer(many=True, read_only=True)
     videos = serializers.IntegerField()
     images = serializers.IntegerField()
 
     class Meta:
-        model = ProjectTask
+        model = Chat
         fields = '__all__'
 
 
-class ProjectTaskUpdateSerializer(serializers.ModelSerializer):
-    objs = EditorObjectForTaskSerializer(many=True, required=False)
+class ChatUpdateSerializer(serializers.ModelSerializer):
+    objs = EditorObjectForChatSerializer(many=True, required=False)
 
     class Meta:
-        model = ProjectTask
+        model = Chat
         exclude = ['project']
         extra_kwargs = {
             'id': {'read_only': True}
@@ -75,7 +54,7 @@ class ProjectTaskUpdateSerializer(serializers.ModelSerializer):
             if obj.pk is not None:
                 to_update.append(obj_data)
             else:
-                obj.task = instance
+                obj.chat = instance
                 to_create.append(obj)
         with transaction.atomic():
             if updated:
@@ -87,12 +66,12 @@ class ProjectTaskUpdateSerializer(serializers.ModelSerializer):
                 for obj_data in to_update:
                     EditorObject.objects.filter(
                         pk=obj_data.pop("id"),
-                        task=instance
+                        chat=instance
                     ).update(**obj_data)
             if to_delete:
                 EditorObject.objects.filter(
                     pk__in=to_delete,
-                    task=instance
+                    chat=instance
                 ).delete()
         return instance
 
@@ -109,84 +88,84 @@ class AgentShortSerializer(serializers.ModelSerializer):
         fields = ['id', 'name']
 
 
-class TaskMessageListSerializer(serializers.ModelSerializer):
+class MessageListSerializer(serializers.ModelSerializer):
     agent = AgentShortSerializer(read_only=True)
     objs = MessageObjectListSerializer(many=True, read_only=True)
 
     class Meta:
-        model = TaskMessage
+        model = Message
         exclude = ['task']
 
 
-class ProjectTaskMessagesSerializer(serializers.ModelSerializer):
-    messages = TaskMessageListSerializer(many=True, read_only=True)
+class ChatMessagesSerializer(serializers.ModelSerializer):
+    messages = MessageListSerializer(many=True, read_only=True)
 
     class Meta:
-        model = ProjectTask
+        model = Chat
         fields = ['id', 'messages']
 
 
-class ProjectTaskShortSerializer(serializers.ModelSerializer):
+class ChatShortSerializer(serializers.ModelSerializer):
     class Meta:
-        model = ProjectTask
+        model = Chat
         fields = '__all__'
 
 
-class ProjectListSerializer(serializers.ModelSerializer):
-    tasks = ProjectTaskShortSerializer(many=True, read_only=True)
+# class ProjectListSerializer(serializers.ModelSerializer):
+#     tasks = ChatShortSerializer(many=True, read_only=True)
 
-    class Meta:
-        model = Project
-        fields = ['id', 'title', 'tasks', 'date_updated']
+#     class Meta:
+#         model = Project
+#         fields = ['id', 'title', 'tasks', 'date_updated']
 
 
-class ProjectTaskPreviewSerializer(serializers.ModelSerializer):
+class ChatPreviewSerializer(serializers.ModelSerializer):
     objs = serializers.HyperlinkedRelatedField(many=True, read_only=True, view_name="message_objects-detail")
     images = serializers.IntegerField()
     video = serializers.IntegerField()
 
     class Meta:
-        model = ProjectTask
+        model = Chat
         exclude = ['project']
 
 
-class ProjectRetrieveSerializer(serializers.ModelSerializer):
-    tasks = ProjectTaskPreviewSerializer(many=True, read_only=True)
+# class ProjectRetrieveSerializer(serializers.ModelSerializer):
+#     tasks = ChatPreviewSerializer(many=True, read_only=True)
 
-    class Meta:
-        model = Project
-        fields = ['id', 'title', 'tasks']
-
-
-class ProjectFullSerializer(serializers.ModelSerializer):
-    tasks = ProjectTaskShortSerializer(many=True, read_only=True)
-
-    class Meta:
-        model = Project
-        fields = '__all__'
+#     class Meta:
+#         model = Project
+#         fields = ['id', 'title', 'tasks']
 
 
-class ProjectShortSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Project
-        fields = ['id', 'title']
-        extra_kwargs = {
-            'id': {'read_only': True}
-        }
+# class ProjectFullSerializer(serializers.ModelSerializer):
+#     tasks = ChatShortSerializer(many=True, read_only=True)
+
+#     class Meta:
+#         model = Project
+#         fields = '__all__'
 
 
-class ProjectCreateRequestSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Project
-        fields = ['deliverables', 'description', 'goal', 'duration']
+# class ProjectShortSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = Project
+#         fields = ['id', 'title']
+#         extra_kwargs = {
+#             'id': {'read_only': True}
+#         }
 
 
-class ProjectCreateResponseSerializer(ProjectShortSerializer):
-    tasks = ProjectTaskShortSerializer(many=True, read_only=True)
+# class ProjectCreateRequestSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = Project
+#         fields = ['deliverables', 'description', 'goal', 'duration']
 
-    class Meta:
-        model = Project
-        fields = ProjectShortSerializer.Meta.fields + ['tasks']
+
+# class ProjectCreateResponseSerializer(ProjectShortSerializer):
+#     tasks = ChatShortSerializer(many=True, read_only=True)
+
+#     class Meta:
+#         model = Project
+#         fields = ProjectShortSerializer.Meta.fields + ['tasks']
 
 
 class MessageObjectCreateSerializer(serializers.ModelSerializer):
@@ -197,16 +176,16 @@ class MessageObjectCreateSerializer(serializers.ModelSerializer):
             'id': {'read_only': True}
         }
 
-class TaskMessageCSATSerializer(serializers.ModelSerializer):
+class MessageCSATSerializer(serializers.ModelSerializer):
     class Meta:
-        model = TaskMessage
+        model = Message
         fields = ['csat']
 
-class TaskMessageCreateSerializer(serializers.ModelSerializer):
+class MessageCreateSerializer(serializers.ModelSerializer):
     objs = MessageObjectCreateSerializer(many=True)
 
     class Meta:
-        model = TaskMessage
+        model = Message
         exclude = ['task']
         extra_kwargs = {
             'id': {'read_only': True},

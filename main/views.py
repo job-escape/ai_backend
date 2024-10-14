@@ -16,8 +16,6 @@ from rest_framework.permissions import AllowAny
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.exceptions import APIException
-
-# from account.models import CustomUser
 from main.api import StreamAgentAPI
 from main.models import Agent, AgentTypes
 from main.serializers import (
@@ -28,25 +26,18 @@ from main.serializers import (
     SynclabWebhookSerializer,
     VideoRequestSerializer,
 )
-# from main.tasks import (
-#     dummy_generate_image_task,
-#     dummy_generate_video_task,
-#     generate_image_task,
-#     generate_video_task,
-#     update_user_onboarding_task
-# )
 from custom.custom_exceptions import BadRequest
 from custom.custom_permissions import HasUnexpiredSubscription
 from custom.custom_renderers import ServerSentEventRenderer
 from custom.custom_shortcuts import get_object_or_raise
-from jlab.models import (
+from chat.models import (
     MessageObject,
     MessageObjectStatuses,
     MessageObjectTypes,
-    ProjectTask,
-    TaskMessage,
+    Chat,
+    Message,
 )
-from jlab.serializers import TaskMessageCreateSerializer
+from chat.serializers import MessageCreateSerializer
 from .utils import (
     check_user_video_credits,
     decrement_user_video_credits,
@@ -66,11 +57,11 @@ class AiViewSet(viewsets.GenericViewSet):
     """
         AI viewset (version 2) dedicated to generating text, images or video for JELab.
     """
-    queryset = ProjectTask.objects.all()
+    queryset = Chat.objects.all()
     permission_classes = [HasUnexpiredSubscription]
 
     def get_queryset(self):
-        return super().get_queryset().filter(project__user_id=self.request.user['user_id'])
+        return super().get_queryset().filter(user_id=self.request.user['user_id'])
 
     def get_serializer_class(self):
         if self.action == 'stream':
@@ -99,7 +90,7 @@ class AiViewSet(viewsets.GenericViewSet):
             The view uses StreamAgentAPI to generate title (for the jlab.ProjectTask) and text response.
         """
         # TODO (DEV-111): refactor to not use agent ID in request
-        task = self.get_object()
+        chat = self.get_object()
         ser = self.get_serializer(data=request.query_params)
         ser.is_valid(raise_exception=True)
         data: Any = ser.data
@@ -108,22 +99,18 @@ class AiViewSet(viewsets.GenericViewSet):
             BadRequest("Invalid agent ID."),
             pk=data['agent_id']
         )
-        task_messages = TaskMessage.objects.filter(
-            task=task, agent__type=agent.type).prefetch_related('objs', 'agent', 'task__project')
-        ai_message = task.messages.create(is_answer=True, agent=agent)
-        # UserOnboarding.objects.filter(
-        #     pk=request.user['user_id']).update(first_text=True)
-        try:
-            create_update_user_onboarding_task({
-                "first_text": True
-            }, str(request.auth))  # Use the token from the request.auth
-        except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        messages = Message.objects.filter(
+            chat=chat, agent__type=agent.type).prefetch_related('objs', 'agent')
+        ai_message = chat.messages.create(is_answer=True, agent=agent)
+        
+        create_update_user_onboarding_task({
+            "first_text": True
+        }, str(request.auth))
         api = StreamAgentAPI(ai_message)
-        if task.title == "Untitled":
-            task.title = api.get_title(data['message_id'])
-            task.save()
-        stream = api.get_text_stream(task_messages, data['message_id'])
+        if chat.title == "Untitled":
+            chat.title = api.get_title(data['message_id'])
+            chat.save()
+        stream = api.get_text_stream(messages, data['message_id'])
         response = StreamingHttpResponse(
             stream, content_type="text/event-stream")
         response['X-Accel-Buffering'] = 'no'  # Disable buffering in nginx
@@ -131,7 +118,7 @@ class AiViewSet(viewsets.GenericViewSet):
         response['Cache-Control'] = 'no-cache'
         return response
 
-    @extend_schema(responses={201: TaskMessageCreateSerializer})
+    @extend_schema(responses={201: MessageCreateSerializer})
     @action(['post'], True)
     def video(self, request: Request, pk=None):
         """
@@ -144,11 +131,8 @@ class AiViewSet(viewsets.GenericViewSet):
         try:
             user_credits = check_user_video_credits(request.auth)
         except APIException as e:
-            # This will handle all the custom API exceptions you've defined
             raise BadRequest(f"Failed to check video credits: {str(e)}")
         except Exception as e:
-            # Catch any other unforeseen exceptions, but make sure to log them
-            print(f"Unexpected error occurred: {str(e)}")  # or use logging
             raise BadRequest(
                 "An unexpected error occurred while checking video credits.")
         
@@ -158,7 +142,7 @@ class AiViewSet(viewsets.GenericViewSet):
         if user_credits['video_credit'] == 0:
             raise BadRequest("Insufficient video credits.")
 
-        task = self.get_object()
+        chat = self.get_object()
         ser = self.get_serializer(data=request.data)
         ser.is_valid(raise_exception=True)
         data = ser.data
@@ -169,39 +153,25 @@ class AiViewSet(viewsets.GenericViewSet):
         )
         assert agent.avatar_id, "Agent has no associated Avatar!"  # type: ignore
         user_message = get_object_or_raise(
-            TaskMessage.objects.filter(
-                task=task, is_answer=False).prefetch_related('objs'),
+            Message.objects.filter(
+                chat=chat, is_answer=False).prefetch_related('objs'),
             BadRequest("Invalid message ID."),
             id=data['message_id']
         )
-        ai_message = task.messages.create(is_answer=True, agent=agent)
+        ai_message = chat.messages.create(is_answer=True, agent=agent)
         ai_msg_obj = ai_message.objs.create(
             content_type=MessageObjectTypes.VIDEO)
         if data['onboarding']:
-            # dummy_generate_video_task.apply_async(
-            #     args=[ai_msg_obj.pk],
-            #     eta=timezone.now() + timezone.timedelta(seconds=DUMMY_GENERATION_DELAY)
-            # )
             create_dummy_video_task(ai_msg_obj.pk)
         else:
             create_generate_video_task(user_message.pk, ai_msg_obj.pk, agent.avatar_id)
-            # generate_video_task.delay(
-            #     user_message.pk, ai_msg_obj.pk, agent.avatar_id)  # type: ignore
             decrement_user_video_credits(
                 user_credits['video_credit'], request.auth)
-            # Decrement video credits and save
-            # user.video_credit = user.video_credit - 1
-            # user.save()
-        # UserOnboarding.objects.filter(pk=user.pk).update(first_video=True)
-        try:
-            create_update_user_onboarding_task({
-                "first_video": True
-            }, str(request.auth))
-        except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        
+        create_update_user_onboarding_task({"first_video": True}, str(request.auth))
         return Response(TaskMessageCreateSerializer(ai_message).data, status.HTTP_201_CREATED)
 
-    @extend_schema(responses={201: TaskMessageCreateSerializer})
+    @extend_schema(responses={201: MessageCreateSerializer})
     @action(['post'], True)
     def image(self, request: Request, pk=None):
         """
@@ -210,13 +180,12 @@ class AiViewSet(viewsets.GenericViewSet):
             The view uses `generate_image_task` to asyncronously generate an image based on
             the provided TaskMessage's text content and the provided Agent's image prompt template.
         """
-        # user: CustomUser = request.user
-        task = self.get_object()
+        chat = self.get_object()
         ser = self.get_serializer(data=request.data)
         ser.is_valid(raise_exception=True)
         data = ser.data
-        user_message: TaskMessage = get_object_or_raise(
-            TaskMessage.objects.filter(task=task, is_answer=False)
+        user_message: Message = get_object_or_raise(
+            Message.objects.filter(chat=chat, is_answer=False)
             .prefetch_related('objs')
             .select_related('agent'),
             BadRequest("Invalid message ID."),
@@ -225,27 +194,18 @@ class AiViewSet(viewsets.GenericViewSet):
         agent = user_message.agent
         if agent.type != AgentTypes.IMAGE:
             raise BadRequest("Invalid agent type.")
-        ai_message = task.messages.create(is_answer=True, agent=agent)
+        ai_message = chat.messages.create(is_answer=True, agent=agent)
         ai_msg_obj = ai_message.objs.create(
             content_type=MessageObjectTypes.IMAGE)
         if data['onboarding']:
-            # dummy_generate_image_task.apply_async(
-            #     args=[ai_msg_obj.pk],
-            #     eta=timezone.now() + timezone.timedelta(seconds=DUMMY_GENERATION_DELAY)
-            # )
             create_dummy_image_task(ai_msg_obj.pk)
         else:
             create_generate_image_task(user_message.pk, ai_msg_obj.pk)
-            # generate_image_task.delay(user_message.pk, ai_msg_obj.pk)
-            # pass
-        try:
-            create_update_user_onboarding_task({
+        
+        create_update_user_onboarding_task({
                 "first_image": True
-            }, str(request.auth))  # Use the token from the request.auth
-        except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        # UserOnboarding.objects.filter(pk=user.pk).update(first_image=True)
-        return Response(TaskMessageCreateSerializer(ai_message).data, status.HTTP_201_CREATED)
+            }, str(request.auth))
+        return Response(MessageCreateSerializer(ai_message).data, status.HTTP_201_CREATED)
 
     @action(['post'], False, permission_classes=[AllowAny])
     def synclab(self, request: Request):

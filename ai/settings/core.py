@@ -72,7 +72,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'main',
-    'jlab',
+    'chat',
+    'interview_prep',
     'rest_framework',
     'rest_framework_simplejwt',
 ]
