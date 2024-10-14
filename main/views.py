@@ -51,7 +51,13 @@ from .utils import (
     check_user_video_credits,
     decrement_user_video_credits,
 )
-from .google_tasks import create_update_user_onboarding_task 
+from .google_tasks import (
+    create_update_user_onboarding_task,
+    create_dummy_image_task,
+    create_dummy_video_task,
+    create_generate_image_task,
+    create_generate_video_task,
+) 
 
 DUMMY_GENERATION_DELAY = 3
 
@@ -176,8 +182,9 @@ class AiViewSet(viewsets.GenericViewSet):
             #     args=[ai_msg_obj.pk],
             #     eta=timezone.now() + timezone.timedelta(seconds=DUMMY_GENERATION_DELAY)
             # )
-            pass
+            create_dummy_video_task(ai_msg_obj.pk)
         else:
+            create_generate_video_task(user_message.pk, ai_msg_obj.pk, agent.avatar_id)
             # generate_video_task.delay(
             #     user_message.pk, ai_msg_obj.pk, agent.avatar_id)  # type: ignore
             decrement_user_video_credits(
@@ -226,10 +233,11 @@ class AiViewSet(viewsets.GenericViewSet):
             #     args=[ai_msg_obj.pk],
             #     eta=timezone.now() + timezone.timedelta(seconds=DUMMY_GENERATION_DELAY)
             # )
-            pass
+            create_dummy_image_task(ai_msg_obj.pk)
         else:
+            create_generate_image_task(user_message.pk, ai_msg_obj.pk)
             # generate_image_task.delay(user_message.pk, ai_msg_obj.pk)
-            pass
+            # pass
         try:
             create_update_user_onboarding_task({
                 "first_image": True

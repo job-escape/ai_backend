@@ -22,6 +22,12 @@ from rest_framework import routers
 from django.contrib import admin
 from django.urls import path
 from main.views import AiViewSet
+from main.cloud_task_endpoints import (
+    dummy_generate_image_task_view,
+    dummy_generate_video_task_view,
+    generate_image_task_view,
+    generate_video_task_view,
+)
 
 router = routers.SimpleRouter()
 
@@ -30,4 +36,9 @@ router.register(r'ai', AiViewSet)
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include(router.urls)),
+
+    path('cloud_tasks/generate-image/', generate_image_task_view, name='google_task_generate_image'),
+    path('cloud_tasks/generate-video/', generate_video_task_view, name='google_task_generate_video'),
+    path('cloud_tasks/dummy-generate-image/', dummy_generate_image_task_view, name='google_task_dummy_generate_image'),
+    path('cloud_tasks/dummy-generate-video/', dummy_generate_video_task_view, name='google_task_dummy_generate_video'),
 ]
