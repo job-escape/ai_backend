@@ -76,6 +76,7 @@ INSTALLED_APPS = [
     'interview_prep',
     'rest_framework',
     'rest_framework_simplejwt',
+    'rest_framework_swagger',
 ]
 if DEBUG:
     INSTALLED_APPS.append('silk')
