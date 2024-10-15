@@ -1,4 +1,5 @@
 import os
+import json
 from pathlib import Path
 
 import environ
@@ -10,8 +11,34 @@ env = environ.Env()
 environ.Env.read_env(os.path.join(BASE_DIR, "ai/.env"))
 
 SECRET_KEY = env("DJANGO_SECRET")
-DEBUG = env("DEBUG").lower() == "true"
-STAGE = env("STAGE").lower() == "true"
+DEBUG = env("DEBUG", "true").lower() == "true"
+STAGE = not (env("STAGE", "true").lower() == "true" and env("DATABASE_SELECTOR") == "prod")
+
+if STAGE:
+    stage_generate_tasks_json = env("STAGE_GENERATE_TASKS")
+    stage_jwt_secrets_json = env("STAGE_JWT_SECRETS")
+    ai_stage_db_json = env("AI_STAGE_DB")
+else:
+    ai_prod_db_json = env("AI_PROD_DB")
+    prod_generate_tasks_json = env("PROD_GENERATE_TASKS")
+    prod_jwt_secrets_json = env("PROD_JWT_SECRETS")
+
+aws_secrets_json = env("AWS_SECRETS")
+general_ai_tools_json = env("GENERAL_AI_TOOLS")
+gpt_secrets_json = env("GPT_SECRETS")
+gcp_infos_json = env("GCP_INFOS")
+
+# Parse the JSON strings into dictionaries, if they exist
+ai_stage_db = json.loads(ai_stage_db_json) if ai_stage_db_json else {}
+ai_prod_db = json.loads(ai_prod_db_json) if ai_prod_db_json else {}
+aws_secrets = json.loads(aws_secrets_json) if aws_secrets_json else {}
+stage_generate_tasks = json.loads(stage_generate_tasks_json) if stage_generate_tasks_json else {}
+prod_generate_tasks = json.loads(prod_generate_tasks_json) if prod_generate_tasks_json else {}
+general_ai_tools = json.loads(general_ai_tools_json) if general_ai_tools_json else {}
+gpt_secrets = json.loads(gpt_secrets_json) if gpt_secrets_json else {}
+gcp_infos = json.loads(gcp_infos_json) if gcp_infos_json else {}
+stage_jwt_secrets = json.loads(stage_jwt_secrets_json) if stage_jwt_secrets_json else {}
+prod_jwt_secrets = json.loads(prod_jwt_secrets_json) if prod_jwt_secrets_json else {}
 
 
 # HOSTS
@@ -118,37 +145,26 @@ WSGI_APPLICATION = 'ai.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
-
 DATABASES = {
-    'default': {
+    'dev': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': env("PRODUCTION_DB_NAME"),
-        'USER': env("PRODUCTION_DB_USER"),
-        'PASSWORD': env("PRODUCTION_DB_PASS"),
-        'HOST': env("PRODUCTION_DB_HOST"),
-        # 'PORT': env("PRODUCTION_DB_PORT"), # google cloud does not allow to enter empty SECRETS
-        'DISABLE_SERVER_SIDE_CURSORS': True
+        'NAME': ai_stage_db.get('DEVELOPMENT_DB_NAME', ""),
+        'USER': ai_stage_db.get('DEVELOPMENT_DB_USER', ""),
+        'PASSWORD': ai_stage_db.get('DEVELOPMENT_DB_PASS', ""),
+        'HOST': ai_stage_db.get('DEVELOPMENT_DB_HOST', ""),
+        'PORT': ai_stage_db.get('DEVELOPMENT_DB_PORT', ""),
     },
-    # 'development': {
-    #     'ENGINE': 'django.db.backends.postgresql',
-    #     'NAME': env("DEVELOPMENT_DB_NAME"),
-    #     'USER': env("DEVELOPMENT_DB_USER"),
-    #     'PASSWORD': env("DEVELOPMENT_DB_PASS"),
-    #     'HOST': env("DEVELOPMENT_DB_HOST"),
-    #     'PORT': env("DEVELOPMENT_DB_PORT"),
-    # },
-    # 'remote': {
-    #     'ENGINE': 'django.db.backends.postgresql',
-    #     'NAME': env("REMOTE_DB_NAME"),
-    #     'USER': env("REMOTE_DB_USER"),
-    #     'PASSWORD': env("REMOTE_DB_PASS"),
-    #     'HOST': env("REMOTE_DB_HOST"),
-    #     # 'PORT': env("REMOTE_DB_PORT"), # google cloud does not require port
-    #     # 'OPTIONS': {
-    #     #    'sslmode': 'require',
-    #     # }
-    # }
+    'prod': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': ai_prod_db.get('PRODUCTION_DB_NAME', ""),
+        'USER': ai_prod_db.get('PRODUCTION_DB_USER', ""),
+        'PASSWORD': ai_prod_db.get('PRODUCTION_DB_PASS', ""),
+        'HOST': ai_prod_db.get('PRODUCTION_DB_HOST', ""),
+        'PORT': ai_prod_db.get('PRODUCTION_DB_PORT', ""),
+        'DISABLE_SERVER_SIDE_CURSORS': True,
+    },
 }
+DATABASE_SELECTOR = env("DATABASE_SELECTOR", "dev")
 DATABASES["default"].update(DATABASES[env("DATABASE_SELECTOR")])
 
 # Password validation
@@ -195,8 +211,8 @@ REST_FRAMEWORK = {
 }
 
 SIMPLE_JWT = {
-    'SIGNING_KEY': env("JWT_SIGNING_KEY"),
-    'ALGORITHM': env("JWT_ALGORITHM"),
+    'SIGNING_KEY': stage_jwt_secrets.get("JWT_SIGNING_KEY") if STAGE else prod_jwt_secrets.get("JWT_SIGNING_KEY"),
+    'ALGORITHM': stage_jwt_secrets.get("JWT_ALGORITHM") if STAGE else stage_jwt_secrets.get("JWT_ALGORITHM")
 }
 
 # Static files (CSS, JavaScript, Images)
@@ -207,11 +223,11 @@ DATA_UPLOAD_MAX_NUMBER_FIELDS = 10000
 
 STATIC_URL = 'static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'static/')
-AWS_ACCESS_KEY_ID = env("AWS_ACCESS_KEY_ID")
-AWS_SECRET_ACCESS_KEY = env('AWS_SECRET_ACCESS_KEY')
-AWS_STORAGE_BUCKET_NAME = env('AWS_STORAGE_BUCKET_NAME')
-AWS_CLOUDFRONT_DOMAIN = env('AWS_CLOUDFRONT_DOMAIN')
-AWS_S3_CUSTOM_DOMAIN = env('AWS_S3_CUSTOM_DOMAIN')
+AWS_ACCESS_KEY_ID = aws_secrets.get('AWS_ACCESS_KEY_ID')
+AWS_SECRET_ACCESS_KEY = aws_secrets.get('AWS_SECRET_ACCESS_KEY')
+AWS_STORAGE_BUCKET_NAME = aws_secrets.get('AWS_STORAGE_BUCKET_NAME')
+AWS_CLOUDFRONT_DOMAIN = aws_secrets.get('AWS_CLOUDFRONT_DOMAIN')
+AWS_S3_CUSTOM_DOMAIN = aws_secrets.get('AWS_S3_CUSTOM_DOMAIN')
 AWS_S3_OBJECT_PARAMETERS = {
     'CacheControl': 'max-age=86400',
 }
