@@ -152,6 +152,14 @@ WSGI_APPLICATION = 'ai.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': ai_stage_db.get('DEVELOPMENT_DB_NAME', ""),
+        'USER': ai_stage_db.get('DEVELOPMENT_DB_USER', ""),
+        'PASSWORD': ai_stage_db.get('DEVELOPMENT_DB_PASS', ""),
+        'HOST': ai_stage_db.get('DEVELOPMENT_DB_HOST', ""),
+        'PORT': ai_stage_db.get('DEVELOPMENT_DB_PORT', ""),
+    },
     'dev': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': ai_stage_db.get('DEVELOPMENT_DB_NAME', ""),
