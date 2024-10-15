@@ -1,19 +1,3 @@
-"""
-URL configuration for ai project.
-
-The `urlpatterns` list routes URLs to views. For more information please see:
-    https://docs.djangoproject.com/en/4.2/topics/http/urls/
-Examples:
-Function views
-    1. Add an import:  from my_app import views
-    2. Add a URL to urlpatterns:  path('', views.home, name='home')
-Class-based views
-    1. Add an import:  from other_app.views import Home
-    2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
-Including another URLconf
-    1. Import the include() function: from django.urls import include, path
-    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
-"""
 from django.urls import path, include
 from main.views import (
     AiViewSet
@@ -21,6 +5,7 @@ from main.views import (
 from rest_framework import routers
 from django.contrib import admin
 from django.urls import path
+from drf_spectacular import views as SchemaViews
 from main.views import (
     AiViewSet,
     AgentViewSet,
@@ -34,7 +19,6 @@ from interview_prep.views import (
     UserInterviewPrepViewSet,
     InterviewPrepViewSet,
 )
-
 from main.cloud_task_endpoints import (
     dummy_generate_image_task_view,
     dummy_generate_video_task_view,
@@ -57,6 +41,15 @@ router.register(r'user_interview_prep', UserInterviewPrepViewSet, 'user_intervie
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include(router.urls)),
+
+    # download
+    path('schema/', SchemaViews.SpectacularAPIView.as_view(), name='schema'),
+    # schema with swagger UI
+    path('schema/swagger-ui/',
+         SchemaViews.SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
+    # schema with redoc UI
+    path('schema/redoc/',
+         SchemaViews.SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
 
     path('cloud_tasks/generate-image/', generate_image_task_view, name='google_task_generate_image'),
     path('cloud_tasks/generate-video/', generate_video_task_view, name='google_task_generate_video'),
