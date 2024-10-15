@@ -11,8 +11,8 @@ env = environ.Env()
 environ.Env.read_env(os.path.join(BASE_DIR, "ai/.env"))
 
 SECRET_KEY = env("DJANGO_SECRET")
-DEBUG = env("DEBUG", "true").lower() == "true"
-STAGE = not (env("STAGE", "true").lower() == "true" and env("DATABASE_SELECTOR") == "prod")
+DEBUG = env("DEBUG").lower() == "true"
+STAGE = not (env("STAGE").lower() == "true" and env("DATABASE_SELECTOR") == "prod")
 
 if STAGE:
     stage_generate_tasks_json = env("STAGE_GENERATE_TASKS")
