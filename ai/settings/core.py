@@ -18,10 +18,16 @@ if STAGE:
     stage_generate_tasks_json = env("STAGE_GENERATE_TASKS")
     stage_jwt_secrets_json = env("STAGE_JWT_SECRETS")
     ai_stage_db_json = env("AI_STAGE_DB")
+    ai_prod_db_json = None
+    prod_generate_tasks_json = None
+    prod_jwt_secrets_json = None
 else:
     ai_prod_db_json = env("AI_PROD_DB")
     prod_generate_tasks_json = env("PROD_GENERATE_TASKS")
     prod_jwt_secrets_json = env("PROD_JWT_SECRETS")
+    stage_generate_tasks_json = None
+    stage_jwt_secrets_json = None
+    ai_stage_db_json = None
 
 aws_secrets_json = env("AWS_SECRETS")
 general_ai_tools_json = env("GENERAL_AI_TOOLS")
