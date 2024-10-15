@@ -259,4 +259,3 @@ class AgentViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
             By default, assumes AgentType of TEXT.
         """
         return super().list(request, *args, **kwargs)
-
