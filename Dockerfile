@@ -14,6 +14,6 @@ RUN pip install --no-cache -r requirements.txt
 
 COPY . /ai/
 
-RUN python manage.py collectstatic --noinput
+# RUN python manage.py collectstatic --noinput
 
 CMD ["sh", "-c", "python manage.py migrate && gunicorn --bind 0.0.0.0:$PORT ai.wsgi:application"]
