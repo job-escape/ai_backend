@@ -5,6 +5,7 @@ steps:
       - '-c'
       - |
         docker pull $_AR_HOSTNAME/$PROJECT_ID/cloud-run-source-deploy/$REPO_NAME/$_SERVICE_NAME:latest || exit 0
+    id: Pull docker cache
   - name: gcr.io/cloud-builders/docker
     args:
       - build

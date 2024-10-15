@@ -17,17 +17,17 @@ STAGE = not (env("STAGE").lower() == "true" and env("DATABASE_SELECTOR") == "pro
 if STAGE:
     stage_generate_tasks_json = env("STAGE_GENERATE_TASKS")
     stage_jwt_secrets_json = env("STAGE_JWT_SECRETS")
-    ai_stage_db_json = env("AI_STAGE_DB")
-    ai_prod_db_json = None
+    stage_db_json = env("AI_STAGE_DB")
+    prod_db_json = None
     prod_generate_tasks_json = None
     prod_jwt_secrets_json = None
 else:
-    ai_prod_db_json = env("AI_PROD_DB")
+    prod_db_json = env("AI_PROD_DB")
     prod_generate_tasks_json = env("PROD_GENERATE_TASKS")
     prod_jwt_secrets_json = env("PROD_JWT_SECRETS")
     stage_generate_tasks_json = None
     stage_jwt_secrets_json = None
-    ai_stage_db_json = None
+    stage_db_json = None
 
 aws_secrets_json = env("AWS_SECRETS")
 general_ai_tools_json = env("GENERAL_AI_TOOLS")
@@ -35,8 +35,8 @@ gpt_secrets_json = env("GPT_SECRETS")
 gcp_infos_json = env("GCP_INFOS")
 
 # Parse the JSON strings into dictionaries, if they exist
-ai_stage_db = json.loads(ai_stage_db_json) if ai_stage_db_json else {}
-ai_prod_db = json.loads(ai_prod_db_json) if ai_prod_db_json else {}
+stage_db = json.loads(stage_db_json) if stage_db_json else {}
+prod_db = json.loads(prod_db_json) if prod_db_json else {}
 aws_secrets = json.loads(aws_secrets_json) if aws_secrets_json else {}
 stage_generate_tasks = json.loads(stage_generate_tasks_json) if stage_generate_tasks_json else {}
 prod_generate_tasks = json.loads(prod_generate_tasks_json) if prod_generate_tasks_json else {}
@@ -154,31 +154,30 @@ WSGI_APPLICATION = 'ai.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': ai_stage_db.get('DEVELOPMENT_DB_NAME', ""),
-        'USER': ai_stage_db.get('DEVELOPMENT_DB_USER', ""),
-        'PASSWORD': ai_stage_db.get('DEVELOPMENT_DB_PASS', ""),
-        'HOST': ai_stage_db.get('DEVELOPMENT_DB_HOST', ""),
-        'PORT': ai_stage_db.get('DEVELOPMENT_DB_PORT', ""),
+        'NAME': stage_db.get('DEVELOPMENT_DB_NAME', ""),
+        'USER': stage_db.get('DEVELOPMENT_DB_USER', ""),
+        'PASSWORD': stage_db.get('DEVELOPMENT_DB_PASS', ""),
+        'HOST': stage_db.get('DEVELOPMENT_DB_HOST', ""),
+        'PORT': stage_db.get('DEVELOPMENT_DB_PORT', ""),
     },
     'dev': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': ai_stage_db.get('DEVELOPMENT_DB_NAME', ""),
-        'USER': ai_stage_db.get('DEVELOPMENT_DB_USER', ""),
-        'PASSWORD': ai_stage_db.get('DEVELOPMENT_DB_PASS', ""),
-        'HOST': ai_stage_db.get('DEVELOPMENT_DB_HOST', ""),
-        'PORT': ai_stage_db.get('DEVELOPMENT_DB_PORT', ""),
+        'NAME': stage_db.get('DEVELOPMENT_DB_NAME', ""),
+        'USER': stage_db.get('DEVELOPMENT_DB_USER', ""),
+        'PASSWORD': stage_db.get('DEVELOPMENT_DB_PASS', ""),
+        'HOST': stage_db.get('DEVELOPMENT_DB_HOST', ""),
+        'PORT': stage_db.get('DEVELOPMENT_DB_PORT', ""),
     },
     'prod': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': ai_prod_db.get('PRODUCTION_DB_NAME', ""),
-        'USER': ai_prod_db.get('PRODUCTION_DB_USER', ""),
-        'PASSWORD': ai_prod_db.get('PRODUCTION_DB_PASS', ""),
-        'HOST': ai_prod_db.get('PRODUCTION_DB_HOST', ""),
-        'PORT': ai_prod_db.get('PRODUCTION_DB_PORT', ""),
+        'NAME': prod_db.get('PRODUCTION_DB_NAME', ""),
+        'USER': prod_db.get('PRODUCTION_DB_USER', ""),
+        'PASSWORD': prod_db.get('PRODUCTION_DB_PASS', ""),
+        'HOST': prod_db.get('PRODUCTION_DB_HOST', ""),
+        'PORT': prod_db.get('PRODUCTION_DB_PORT', ""),
         'DISABLE_SERVER_SIDE_CURSORS': True,
     },
 }
-DATABASE_SELECTOR = env("DATABASE_SELECTOR")
 DATABASES["default"].update(DATABASES[env("DATABASE_SELECTOR")])
 
 # Password validation
