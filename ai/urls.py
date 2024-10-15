@@ -44,15 +44,15 @@ from main.cloud_task_endpoints import (
 
 router = routers.SimpleRouter()
 
-router.register(r'ai', AiViewSet)
-router.register(r'main/agents', AgentViewSet)
+router.register(r'ai', AiViewSet, 'ai')
+router.register(r'main/agents', AgentViewSet, 'main/agents')
 
 router.register(r'chats', ChatViewSet, 'chats')
 router.register(r'messages', MessageViewSet, 'messages')
 router.register(r'message_objects', MessageObjectViewSet, 'message_objects')
 
-router.register(r'interview_prep', InterviewPrepViewSet)
-router.register(r'user_interview_prep', UserInterviewPrepViewSet)
+router.register(r'interview_prep', InterviewPrepViewSet, 'interview_prep')
+router.register(r'user_interview_prep', UserInterviewPrepViewSet, 'user_interview_prep')
 
 urlpatterns = [
     path('admin/', admin.site.urls),
