@@ -21,7 +21,20 @@ from main.views import (
 from rest_framework import routers
 from django.contrib import admin
 from django.urls import path
-from main.views import AiViewSet
+from main.views import (
+    AiViewSet,
+    AgentViewSet,
+)
+from chat.views import (
+    ChatViewSet,
+    MessageViewSet,
+    MessageObjectViewSet,
+)
+from interview_prep.views import (
+    UserInterviewPrepViewSet,
+    InterviewPrepViewSet,
+)
+
 from main.cloud_task_endpoints import (
     dummy_generate_image_task_view,
     dummy_generate_video_task_view,
@@ -32,6 +45,14 @@ from main.cloud_task_endpoints import (
 router = routers.SimpleRouter()
 
 router.register(r'ai', AiViewSet)
+router.register(r'main/agents', AgentViewSet)
+
+router.register(r'chats', ChatViewSet, 'chats')
+router.register(r'messages', MessageViewSet, 'messages')
+router.register(r'message_objects', MessageObjectViewSet, 'message_objects')
+
+router.register(r'interview_prep', InterviewPrepViewSet)
+router.register(r'user_interview_prep', UserInterviewPrepViewSet)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
