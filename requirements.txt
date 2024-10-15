@@ -21,4 +21,4 @@ google-cloud==0.34.0
 google-cloud-secret-manager==2.7.2
 google-cloud-tasks==2.16.5
 google-cloud-speech==2.27.0
-# celery[redis]==5.2.7
+celery[redis]==5.2.7 # remove it
