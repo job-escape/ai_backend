@@ -61,7 +61,7 @@ class AiViewSet(viewsets.GenericViewSet):
     permission_classes = [HasUnexpiredSubscription]
 
     def get_queryset(self):
-        return super().get_queryset().filter(user_id=self.request.user['user_id'])
+        return super().get_queryset().filter(user_id=self.request.user.id)
 
     def get_serializer_class(self):
         if self.action == 'stream':
@@ -122,7 +122,7 @@ class AiViewSet(viewsets.GenericViewSet):
     @action(['post'], True)
     def video(self, request: Request, pk=None):
         """
-            Returns a new TaskMessage associated with the provided ProjectTask that has
+            Returns a new TaskMessage associated with the provided Chat that has
             a MessageObject of type VIDEO.
             The view uses `generate_video_task` to asyncronously generate a video lip-synced to
             the provided TaskMessage's text content with a VideoAvatar associated with the provided Agent.

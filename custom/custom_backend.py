@@ -16,6 +16,16 @@ from rest_framework_simplejwt.authentication import (AuthenticationFailed,
                                                      get_md5_hash_password)
 
 
+class JWTUser:
+    def __init__(self, user_id, user_email, subscriptions):
+        self.id = user_id
+        self.email = user_email
+        self.subscriptions = subscriptions
+    
+    @property
+    def is_authenticated(self):
+        return True
+
 class PrefetchedJWTAuthentication(JWTAuthentication):
     def get_user(self, validated_token):
         """
@@ -23,12 +33,9 @@ class PrefetchedJWTAuthentication(JWTAuthentication):
         without performing a database lookup.
         """
         try:
-            # Extract user identifier from token
-            # type: ignore
             user_id = validated_token[api_settings.USER_ID_CLAIM]
         except KeyError:
-            raise InvalidToken(
-                _("Token contained no recognizable user identification"))
+            raise InvalidToken(_("Token contained no recognizable user identification"))
 
         email = validated_token.get('email', None)
         subscriptions = validated_token.get('subscriptions', [])
@@ -36,14 +43,7 @@ class PrefetchedJWTAuthentication(JWTAuthentication):
         if not user_id or not email:
             raise AuthenticationFailed(_("Invalid user in token"))
 
-        # Construct a user-like object (or dictionary) from the token data
-        user_info = {
-            "user_id": user_id,
-            "email": email,
-            "subscriptions": subscriptions,
-        }
-
-        return user_info
+        return JWTUser(user_id=user_id, user_email=email, subscriptions=subscriptions)
 
 
 class PaddleHeaderAuthentication(BasicAuthentication):

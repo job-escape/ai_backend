@@ -25,7 +25,7 @@ class UserInterviewPrepViewSet(viewsets.GenericViewSet, mixins.RetrieveModelMixi
     """The viewset for working with the interviews (UserInterviewPreps)."""
 
     def get_queryset(self):
-        qs = UserInterviewPrep.objects.filter(user=self.request.user)
+        qs = UserInterviewPrep.objects.filter(user_id=self.request.user.id)
         if self.action == 'retrieve':
             return qs.select_related('interview').prefetch_related('messages')
         if self.action == 'question':
@@ -48,7 +48,7 @@ class UserInterviewPrepViewSet(viewsets.GenericViewSet, mixins.RetrieveModelMixi
         return None
 
     def perform_create(self, serializer):
-        serializer.save(user_id=self.request.user['user_id'], user_email=self.request.user['user_email'])
+        serializer.save(user_id=self.request.user.id, user_email=self.request.user.email)
 
     @extend_schema(request=None)
     @action(['post'], True)
