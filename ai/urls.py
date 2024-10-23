@@ -29,7 +29,7 @@ from main.cloud_task_endpoints import (
 router = routers.SimpleRouter()
 
 router.register(r'ai', AiViewSet, 'ai')
-router.register(r'main/agents', AgentViewSet, 'main/agents')
+router.register(r'ai/agents', AgentViewSet, 'ai/agents')
 
 router.register(r'chats', ChatViewSet, 'chats')
 router.register(r'messages', MessageViewSet, 'messages')

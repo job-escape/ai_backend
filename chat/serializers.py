@@ -1,8 +1,12 @@
 from django.db import transaction
 from rest_framework import serializers
-
 from main.models import Agent
-from chat.models import (EditorObject, MessageObject, Chat, Message)
+from chat.models import (
+    EditorObject, 
+    MessageObject, 
+    Chat,
+    Message,
+)
 
 class EditorObjectForChatSerializer(serializers.ModelSerializer):
     delete = serializers.BooleanField(required=False, default=False, write_only=True)  # type: ignore
@@ -111,14 +115,6 @@ class ChatShortSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-# class ProjectListSerializer(serializers.ModelSerializer):
-#     tasks = ChatShortSerializer(many=True, read_only=True)
-
-#     class Meta:
-#         model = Project
-#         fields = ['id', 'title', 'tasks', 'date_updated']
-
-
 class ChatPreviewSerializer(serializers.ModelSerializer):
     objs = serializers.HyperlinkedRelatedField(many=True, read_only=True, view_name="message_objects-detail")
     images = serializers.IntegerField()
@@ -127,46 +123,6 @@ class ChatPreviewSerializer(serializers.ModelSerializer):
     class Meta:
         model = Chat
         exclude = ['project']
-
-
-# class ProjectRetrieveSerializer(serializers.ModelSerializer):
-#     tasks = ChatPreviewSerializer(many=True, read_only=True)
-
-#     class Meta:
-#         model = Project
-#         fields = ['id', 'title', 'tasks']
-
-
-# class ProjectFullSerializer(serializers.ModelSerializer):
-#     tasks = ChatShortSerializer(many=True, read_only=True)
-
-#     class Meta:
-#         model = Project
-#         fields = '__all__'
-
-
-# class ProjectShortSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = Project
-#         fields = ['id', 'title']
-#         extra_kwargs = {
-#             'id': {'read_only': True}
-#         }
-
-
-# class ProjectCreateRequestSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = Project
-#         fields = ['deliverables', 'description', 'goal', 'duration']
-
-
-# class ProjectCreateResponseSerializer(ProjectShortSerializer):
-#     tasks = ChatShortSerializer(many=True, read_only=True)
-
-#     class Meta:
-#         model = Project
-#         fields = ProjectShortSerializer.Meta.fields + ['tasks']
-
 
 class MessageObjectCreateSerializer(serializers.ModelSerializer):
     class Meta:

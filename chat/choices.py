@@ -4,6 +4,7 @@ from django.utils.translation import gettext_lazy as _
 class ChatType(models.TextChoices):
     CHAT = 'chat', _('Chat')
     PLAYGROUND = 'playground', _('Playground')
+    MENTOR = 'mentor', _("Mentor")
 
 
 class MessageObjectTypes(models.TextChoices):
